@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duoplenger Project - HD Video Generator Pro</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #08080c; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+        .screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.7s cubic-bezier(0.77, 0, 0.175, 1); }
+        #authScreen { z-index: 15; background: radial-gradient(circle at center, #1a1528 0%, #08080c 100%); }
+        .project-container { width: 88%; max-width: 400px; text-align: center; }
+        .project-avatar-box { width: 90px; height: 90px; margin: 0 auto 15px; border-radius: 50%; padding: 3px; background: linear-gradient(135deg, #a855f7, #ec4899, #3b82f6); box-shadow: 0 0 25px rgba(168, 85, 247, 0.4); animation: floatLogo 3s ease-in-out infinite; }
+        .project-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #121218; }
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .project-title { font-size: 24px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 25px; background: linear-gradient(90deg, #c084fc, #f472b6, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; }
+        .auth-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 30px 25px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden; }
+        .tab-indicator { position: absolute; top: 0; left: 25px; width: calc(50% - 25px); height: 3px; background: linear-gradient(90deg, #a855f7, #ec4899); transition: transform 0.3s ease; border-radius: 2px; }
+        .auth-tabs { display: flex; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; }
+        .auth-tab { flex: 1; background: none; border: none; color: #888; font-size: 15px; font-weight: 700; cursor: pointer; transition: color 0.3s; }
+        .auth-tab.active { color: #fff; }
+        .input-group { position: relative; margin-bottom: 18px; text-align: left; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: 0.6; }
+        .auth-input { width: 100%; padding: 13px 15px 13px 45px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: #fff; font-size: 14px; outline: none; transition: all 0.3s; }
+        .auth-input:focus { border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); background: rgba(0, 0, 0, 0.5); }
+        .btn-auth { width: 100%; padding: 14px; background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3); margin-top: 5px; }
+        #introScreen { transform: translateY(100%); z-index: 10; background: #000; }
+        #bgVideo { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        .video-overlay-text { position: absolute; bottom: 40px; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: bold; z-index: 12; color: #c084fc; animation: pulseGlow 1.5s infinite; }
+        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 10px rgba(192, 132, 252, 0.2); } 50% { box-shadow: 0 0 20px rgba(192, 132, 252, 0.6); } }
+        
+        #generatorScreen { transform: translateY(200%); background: radial-gradient(circle at center, #12101e 0%, #08080c 100%); z-index: 5; overflow-y: auto; padding: 25px 0; justify-content: flex-start; }
+        .top-nav { width: 88%; max-width: 390px; display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 10px 18px; border-radius: 16px; margin-bottom: 12px; }
+        .user-info { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #00ffcc; }
+        .btn-logout { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        
+        /* Tambahan Menu Tab Navigasi Atas di Dashboard */
+        .dashboard-tabs { width: 88%; max-width: 390px; display: flex; gap: 8px; margin-bottom: 12px; }
+        .dash-tab { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #888; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center; transition: 0.3s; }
+        .dash-tab.active { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; color: #fff; }
+
+        .card { background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 22px; border-radius: 24px; width: 88%; max-width: 390px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); margin-bottom: 20px; }
+        .upload-label { display: block; position: relative; background: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(168, 85, 247, 0.4); padding: 16px; border-radius: 16px; cursor: pointer; margin-bottom: 12px; font-size: 12px; color: #ccc; z-index: 2; }
+        .upload-label input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 3; }
+        .resolution-box { display: flex; gap: 6px; margin-bottom: 12px; }
+        .res-btn { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #aaa; padding: 7px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .res-btn.active { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; color: #fff; }
+        .filter-options { display: flex; gap: 6px; margin-bottom: 15px; }
+        .filter-btn { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); color: #888; padding: 6px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .filter-btn.active { background: rgba(0, 255, 204, 0.15); border-color: #00ffcc; color: #00ffcc; }
+        .btn-process { background: linear-gradient(135deg, #00ffcc, #00bfff); color: #000; border: none; width: 100%; padding: 12px; font-weight: 800; border-radius: 12px; cursor: pointer; font-size: 14px; box-shadow: 0 8px 20px rgba(0, 255, 204, 0.3); }
+        .btn-process:disabled { opacity: 0.5; cursor: not-allowed; }
+        #progress-box { display: none; margin-top: 12px; text-align: left; }
+        .progress-track { width: 100%; height: 7px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 5px; }
+        .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #00ffcc, #00bfff); transition: width 0.1s linear; }
+        .btn-download { width: 100%; background: linear-gradient(135deg, #ec4899, #f43f5e); color: white; text-decoration: none; padding: 13px; border-radius: 12px; font-weight: 700; display: none; text-align: center; font-size: 13px; margin-top: 12px; box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3); }
+
+        /* Style Library List */
+        .library-section { display: none; width: 88%; max-width: 390px; }
+        .library-item { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 14px 18px; border-radius: 16px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 13px; transition: 0.3s; }
+        .library-item:hover { border-color: #a855f7; background: rgba(168, 85, 247, 0.05); }
+    </style>
+</head>
+<body>
+    <audio id="bgAudio" preload="auto"><source src="videooniya.mp3" type="audio/mpeg"></audio>
+    <audio id="clickSfx" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
+
+    <div id="authScreen" class="screen">
+        <div class="project-container">
+            <div class="project-avatar-box">
+                <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80" class="project-avatar" alt="Logo">
+            </div>
+            <div class="project-title">Duoplenger Project</div>
+            <div class="auth-card">
+                <div class="tab-indicator" id="tabIndicator"></div>
+                <div class="auth-tabs">
+                    <button class="auth-tab active" id="tabLoginBtn" onclick="playSfx(); switchAuthTab('login')">Login</button>
+                    <button class="auth-tab" id="tabRegisterBtn" onclick="playSfx(); switchAuthTab('register')">Register</button>
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">👤</span>
+                    <input type="text" class="auth-input" id="username" placeholder="Username / Email">
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" class="auth-input" id="password" placeholder="Password">
+                </div>
+                <button class="btn-auth" id="authSubmitBtn" onclick="playSfx(); prosesAuth()">Login 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="introScreen" class="screen">
+        <video id="bgVideo" muted playsinline preload="auto">
+            <source src="videooniya.mp4" type="video/mp4">
+        </video>
+        <div class="video-overlay-text">✨ Memuat Sistem Duoplenger AI...</div>
+    </div>
+
+    <div id="generatorScreen" class="screen">
+        <div class="top-nav">
+            <div class="user-info">👤 <span id="displayUser">User</span></div>
+            <button class="btn-logout" onclick="playSfx(); logOut()">Log Out 🚪</button>
+        </div>
+
+        <!-- Tombol Pilihan Menu Dashboard -->
+        <div class="dashboard-tabs">
+            <button class="dash-tab active" id="menuEnhancer" onclick="playSfx(); switchDashMenu('enhancer')">⚡ ENHANCER</button>
+            <button class="dash-tab" id="menuLibrary" onclick="playSfx(); switchDashMenu('library')">📺 WATCH LIBRARY</button>
+        </div>
+
+        <!-- Halaman 1: Enhancer Asli Lu -->
+        <div class="card" id="enhancerPanel">
+            <h2 style="margin-top:0; color:#00ffcc; font-size: 19px; font-weight: 800;">HD Video Enhancer</h2>
+            <p style="font-size: 11px; color: #888; margin-bottom: 12px;">Biar status WA & TikTok gak burik lagi!</p>
+            
+            <label class="upload-label" id="fileLabel">
+                📁 Pilih Video Mentah Disini
+                <input type="file" id="videoInput" accept="video/*" onchange="playSfx(); namaFileDipilih()">
+            </label>
+
+            <div class="resolution-box">
+                <button class="res-btn" id="res720" onclick="playSfx(); setRes('720')">720p HD</button>
+                <button class="res-btn active" id="res1080" onclick="playSfx(); setRes('1080')">1080p FHD</button>
+                <button class="res-btn" id="res4k" onclick="playSfx(); setRes('4k')">4K Ultra</button>
+            </div>
+
+            <div class="filter-options">
+                <button class="filter-btn active" id="fNormal" onclick="playSfx(); setFilter('normal')">Standard</button>
+                <button class="filter-btn" id="fCinematic" onclick="playSfx(); setFilter('cinematic')">Cinematic HDR</button>
+                <button class="filter-btn" id="fNeon" onclick="playSfx(); setFilter('neon')">Cyber Neon</button>
+            </div>
+            
+            <button class="btn-process" id="processBtn" onclick="playSfx(); mulaiProses()">GENERATE KE HD ⚡</button>
+            
+            <div id="progress-box">
+                <div class="progress-track">
+                    <div class="progress-fill" id="barFill"></div>
+                </div>
+                <p id="statusText" style="font-size: 11px; margin-top: 5px; color: #00ffcc; font-weight: 600; font-family: monospace;"></p>
+            </div>
+
+            <a id="downloadBtn" class="btn-download">📥 Download Video HD</a>
+        </div>
+
+        <!-- Halaman 2: Watch Library (Semuamua & onesummernight) -->
+        <div class="library-section" id="libraryPanel">
+            <div class="library-item" onclick="playLibraryVideo('Semuamua.mp4', 'Semuamua')">
+                <span>▶️ Semuamua</span>
+                <span style="font-size:10px; color:#a855f7;">Tonton Video</span>
+            </div>
+            <div class="library-item" onclick="playLibraryVideo('onesummernight.mp4', 'onesummernight')">
+                <span>▶️ onesummernight</span>
+                <span style="font-size:10px; color:#a855f7;">Tonton Video</span>
+            </div>
+
+            <div class="card" id="playerContainer" style="display:none; margin-top: 15px;">
+                <h4 id="libraryVideoTitle" style="color:#00ffcc; margin-top:0; font-size:14px;"></h4>
+                <video id="libraryVideoPlayer" controls style="width:100%; border-radius:12px; margin-bottom:10px;"></video>
+                <button class="btn-logout" style="width:100%; padding:10px; font-size:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff;" onclick="playSfx(); closeLibraryVideo()">Tutup Player ❌</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const video = document.getElementById('bgVideo');
+        const audio = document.getElementById('bgAudio');
+        const clickSfx = document.getElementById('clickSfx');
+        let currentMode = 'login';
+        let selectedFile = null;
+        let selectedRes = '1080';
+        let selectedFilterMode = 'normal';
+
+        function playSfx() {
+            clickSfx.currentTime = 0;
+            clickSfx.play().catch(e => {});
+        }
+
+        function switchAuthTab(mode) {
+            currentMode = mode;
+            let indicator = document.getElementById('tabIndicator');
+            let loginBtn = document.getElementById('tabLoginBtn');
+            let regBtn = document.getElementById('tabRegisterBtn');
+            let submitBtn = document.getElementById('authSubmitBtn');
+
+            if(mode === 'login') {
+                indicator.style.transform = 'translateX(0)';
+                loginBtn.classList.add('active');
+                regBtn.classList.remove('active');
+                submitBtn.innerText = "Login 🚀";
+            } else {
+                indicator.style.transform = 'translateX(100%)';
+                regBtn.classList.add('active');
+                loginBtn.classList.remove('active');
+                submitBtn.innerText = "Daftar Akun ✨";
+            }
+        }
+
+        function switchDashMenu(menu) {
+            let enhancerPanel = document.getElementById('enhancerPanel');
+            let libraryPanel = document.getElementById('libraryPanel');
+            let menuEnhancer = document.getElementById('menuEnhancer');
+            let menuLibrary = document.getElementById('menuLibrary');
+
+            if(menu === 'enhancer') {
+                enhancerPanel.style.display = 'block';
+                libraryPanel.style.display = 'none';
+                menuEnhancer.classList.add('active');
+                menuLibrary.classList.remove('active');
+            } else {
+                enhancerPanel.style.display = 'none';
+                libraryPanel.style.display = 'block';
+                menuLibrary.classList.add('active');
+                menuEnhancer.classList.remove('active');
+            }
+        }
+
+        function playLibraryVideo(filename, title) {
+            playSfx();
+            let playerContainer = document.getElementById('playerContainer');
+            let videoPlayer = document.getElementById('libraryVideoPlayer');
+            let videoTitle = document.getElementById('libraryVideoTitle');
+
+            videoTitle.innerText = "📺 " + title;
+            videoPlayer.src = filename;
+            playerContainer.style.display = 'block';
+            videoPlayer.play().catch(e => {
+                alert("Gagal memutar video. Pastikan file " + filename + " ada di folder yang sama!");
+            });
+        }
+
+        function closeLibraryVideo() {
+            let videoPlayer = document.getElementById('libraryVideoPlayer');
+            let playerContainer = document.getElementById('playerContainer');
+            videoPlayer.pause();
+            playerContainer.style.display = 'none';
+        }
+
+        function setRes(res) {
+            selectedRes = res;
+            document.querySelectorAll('.res-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('res' + res).classList.add('active');
+        }
+
+        function setFilter(mode) {
+            selectedFilterMode = mode;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('f' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('active');
+        }
+
+        function prosesAuth() {
+            let user = document.getElementById('username').value.trim();
+            let pass = document.getElementById('password').value.trim();
+
+            if(!user || !pass) {
+                alert("Isi username dan password dulu dong bre!");
+                return;
+            }
+
+            let savedUsers = JSON.parse(localStorage.getItem('duoplenger_users') || '{}');
+
+            if (currentMode === 'login') {
+                if (!savedUsers[user] || savedUsers[user] !== pass) {
+                    alert("⚠️ Akun belum terdaftar atau password salah!");
+                    return;
+                }
+            } else {
+                if (savedUsers[user]) {
+                    alert("⚠️ Username ini sudah terdaftar!");
+                    return;
+                }
+                savedUsers[user] = pass;
+                localStorage.setItem('duoplenger_users', JSON.stringify(savedUsers));
+            }
+
+            document.getElementById('displayUser').innerText = user;
+            document.getElementById('authScreen').style.transform = 'translateY(-100%)';
+            document.getElementById('introScreen').style.transform = 'translateY(0)';
+
+            video.currentTime = 0;
+            audio.currentTime = 0;
+            video.play().catch(e => {});
+            audio.play().catch(e => {});
+        }
+
+        function logOut() {
+            audio.pause();
+            video.pause();
+            closeLibraryVideo();
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            selectedFile = null;
+            document.getElementById('fileLabel').innerHTML = '📁 Pilih Video Mentah Disini<input type="file" id="videoInput" accept="video/*" onchange="playSfx(); namaFileDipilih()">';
+            document.getElementById('progress-box').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+            switchDashMenu('enhancer');
+
+            document.getElementById('generatorScreen').style.transform = 'translateY(200%)';
+            document.getElementById('introScreen').style.transform = 'translateY(100%)';
+            document.getElementById('authScreen').style.transform = 'translateY(0)';
+        }
+
+        video.addEventListener('ended', function() {
+            document.getElementById('introScreen').style.transform = 'translateY(-100%)';
+            document.getElementById('generatorScreen').style.transform = 'translateY(0)';
+            audio.pause();
+        });
+
+        function namaFileDipilih() {
+            let input = document.getElementById('videoInput');
+            let label = document.getElementById('fileLabel');
+            if(input.files && input.files.length > 0) {
+                selectedFile = input.files[0];
+                let ukuranMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+                label.innerHTML = `✅ ${selectedFile.name} (${ukuranMB} MB)<input type="file" id="videoInput" accept="video/*" onchange="playSfx(); namaFileDipilih()">`;
+            }
+        }
+
+        function mulaiProses() {
+            if(!selectedFile) {
+                alert("Pilih videonya dulu dong bre!");
+                return;
+            }
+
+            let btnProcess = document.getElementById('processBtn');
+            let progressBox = document.getElementById('progress-box');
+            let bar = document.getElementById('barFill');
+            let status = document.getElementById('statusText');
+            let dlBtn = document.getElementById('downloadBtn');
+
+            btnProcess.disabled = true;
+            progressBox.style.display = 'block';
+            dlBtn.style.display = 'none';
+
+            let fileSizeInMB = selectedFile.size / (1024 * 1024);
+            let multiplier = selectedRes === '4k' ? 180 : (selectedRes === '1080' ? 100 : 60);
+            let totalDurationMs = Math.max(3000, fileSizeInMB * multiplier); 
+            let intervalTime = 50;
+            let increments = totalDurationMs / intervalTime;
+            let currentStep = 0;
+
+            let timer = setInterval(() => {
+                currentStep++;
+                let progress = Math.min(100, (currentStep / increments) * 100);
+                bar.style.width = progress + '%';
+
+                if(progress < 30) {
+                    status.innerText = `[AI Upscale] Analisis Bitrate (${Math.round(progress)}%)...`;
+                } else if(progress < 70) {
+                    status.innerText = `[HD Enhancement] Render ${selectedRes.toUpperCase()} (${Math.round(progress)}%)...`;
+                } else if(progress < 100) {
+                    status.innerText = `[Anti-Burik SW] Optimasi TikTok/WA (${Math.round(progress)}%)...`;
+                } else {
+                    clearInterval(timer);
+                    status.innerText = "✔️ SUKSES! Video HD siap di-download.";
+                    btnProcess.disabled = false;
+
+                    try {
+                        let cleanUrl = URL.createObjectURL(selectedFile);
+                        dlBtn.href = cleanUrl;
+                        dlBtn.download = `HD_${selectedRes}_${selectedFilterMode}_` + selectedFile.name;
+                        dlBtn.style.display = 'block';
+                    } catch (err) {
+                        alert("Gagal menyiapkan link download.");
+                    }
+                }
+            }, intervalTime);
+        }
+    </script>
+</body>
+</html>
