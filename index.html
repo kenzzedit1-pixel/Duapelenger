@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SYSTEM FAILURE</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; overflow: hidden; font-family: 'Courier New', monospace; }
+    body { background: #000; color: #ff0000; height: 100vh; width: 100vw; }
+    
+    /* LAYAR AWAL */
+    #start-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #050505; z-index: 9999; position: relative; padding: 20px; text-align: center; }
+    #start-screen h1 { font-size: 35px; color: #ff0000; text-shadow: 0 0 20px red; margin-bottom: 20px; animation: shake 0.1s infinite; }
+    #start-screen p { color: #888; font-size: 14px; margin-bottom: 30px; }
+    #start-btn { padding: 20px 40px; font-size: 22px; font-weight: bold; background: #ff0000; color: #fff; border: 2px solid #fff; cursor: pointer; box-shadow: 0 0 30px red; border-radius: 10px; }
+    #start-btn:active { transform: scale(0.95); }
+
+    /* LAYAR RAT */
+    #rat-screen { display: none; position: fixed; inset: 0; z-index: 10000; background: #000; padding: 20px; }
+    
+    /* Efek Strobe Merah / Hitam */
+    .strobe { animation: strobe-anim 0.1s infinite; }
+    @keyframes strobe-anim { 0% { background: #000; } 50% { background: #500; } 100% { background: #000; } }
+
+    /* Teks Utama */
+    .main-warning { font-size: 40px; font-weight: 900; color: #ff0000; text-align: center; margin-top: 5vh; text-shadow: 4px 4px #000, 0 0 30px red; animation: shake 0.1s infinite; letter-spacing: 2px; }
+    @keyframes shake {
+        0% { transform: translate(2px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(0px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(2px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(2px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+    
+    .sub-text { font-size: 18px; color: #fff; text-align: center; margin-top: 10px; letter-spacing: 3px; animation: blink 0.2s infinite; }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+
+    /* Terminal Log */
+    #log-box { position: absolute; bottom: 10px; left: 10px; right: 10px; height: 35vh; overflow: hidden; color: #00ff00; font-size: 12px; line-height: 1.2; text-shadow: 0 0 5px #0f0; opacity: 0.9; }
+
+    /* Progress Bar */
+    .progress-container { width: 80%; height: 20px; background: #333; border: 2px solid red; margin: 20px auto; position: relative; }
+    #progress-bar { width: 0%; height: 100%; background: red; transition: width 0.5s; box-shadow: 0 0 20px red; }
+    .progress-text { text-align: center; color: #fff; font-size: 14px; margin-top: 5px; font-weight: bold; }
+
+    /* Modal Password */
+    #pass-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 20000; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+    #pass-modal h2 { color: #ff0000; font-size: 24px; text-shadow: 0 0 20px red; margin-bottom: 20px; animation: blink 0.5s infinite; }
+    #pass-input { padding: 15px; font-size: 35px; text-align: center; letter-spacing: 15px; width: 200px; background: #000; border: 3px solid #ff0000; color: #fff; outline: none; font-family: monospace; border-radius: 10px; }
+    #pass-modal button { margin-top: 20px; padding: 15px 40px; font-size: 20px; background: #ff0000; color: #fff; font-weight: bold; border: none; cursor: pointer; border-radius: 10px; box-shadow: 0 0 20px red; }
+</style>
+</head>
+<body>
+
+<!-- LAYAR AWAL -->
+<div id="start-screen">
+    <h1>WARNING: VIRUS DETECTED</h1>
+    <p>Perangkat Anda telah terinfeksi. Jangan matikan perangkat.</p>
+    <button id="start-btn" onclick="startPrank()">SCAN PERANGKAT</button>
+</div>
+
+<!-- LAYAR BRUTAL -->
+<div id="rat-screen">
+    <div class="main-warning">SYSTEM HACKED</div>
+    <div class="sub-text">ALL FILES ARE BEING ENCRYPTED</div>
+    
+    <div class="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    <div class="progress-text" id="progress-text">Deleting Data: 0%</div>
+
+    <div id="log-box"></div>
+    
+    <!-- MODAL PASSWORD -->
+    <div id="pass-modal">
+        <h2>MASUKKAN KODE DEKRIPSI (4 ANGKA)</h2>
+        <input type="password" id="pass-input" maxlength="4" placeholder="****" onkeypress="handleEnter(event)">
+        <button onclick="checkPass()">BUKA</button>
+    </div>
+</div>
+
+<script>
+    let audioCtx, oscillator, audioInterval, logInterval, progressInterval;
+    let progress = 0;
+
+    // FUNGSI BLOKIR KELUAR (ANTI BACK)
+    function lockScreen() {
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' || e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+            }
+        });
+        // Spam history biar tombol back ga bisa
+        for(let i=0; i<100; i++) { history.pushState(null, null, location.href); }
+        window.onpopstate = function () { history.go(1); };
+        
+        // Kalo keluar fullscreen, paksa balik
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(()=>{});
+            }
+        });
+    }
+
+    async function startPrank() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('rat-screen').style.display = 'block';
+        document.getElementById('rat-screen').classList.add('strobe');
+        
+        lockScreen();
+
+        // 1. FULLSCREEN PAKSA
+        try { await document.documentElement.requestFullscreen(); } catch(e) {}
+
+        // 2. SUARA SIRINE DISTORSI (Bikin panik)
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            oscillator = audioCtx.createOscillator();
+            let gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(100, audioCtx.currentTime);
+            
+            audioInterval = setInterval(() => {
+                oscillator.frequency.setValueAtTime(200 + Math.random() * 1000, audioCtx.currentTime);
+            }, 80);
+
+            gainNode.gain.value = 0.5; // Volume
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+        } catch(e) {}
+
+        // 3. LOG TERMINAL (Simulasi Hapus File)
+        const logBox = document.getElementById('log-box');
+        const logs = [
+            "[!] ACCESSING ROOT DIRECTORY...", "[!] DELETING DCIM/PHOTOS...", 
+            "[!] ENCRYPTING WHATSAPP DATABASE...", "[!] STEALING PASSWORDS...", 
+            "[!] UPLOADING TO DARK WEB SERVER...", "[X] CRITICAL ERROR: SYSTEM FAILURE.",
+            "[!] MENGHAPUS FILE SISTEM...", "[!] MENGUNCI SEMUA APLIKASI..."
+        ];
+        logInterval = setInterval(() => {
+            let txt = logs[Math.floor(Math.random() * logs.length)];
+            let hex = Math.random().toString(16).substr(2, 6).toUpperCase();
+            logBox.innerHTML += `<div>[0x${hex}] ${txt}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }, 50);
+
+        // 4. PROGRESS BAR PENGHAPUSAN
+        progressInterval = setInterval(() => {
+            if(progress < 100) {
+                progress += Math.floor(Math.random() * 5) + 1;
+                if(progress > 100) progress = 100;
+                document.getElementById('progress-bar').style.width = progress + '%';
+                document.getElementById('progress-text').innerText = `Deleting Data: ${progress}%`;
+            } else {
+                document.getElementById('progress-text').innerText = "SYSTEM DESTROYED.";
+                document.getElementById('progress-text').style.color = "red";
+                document.getElementById('progress-text').style.textShadow = "0 0 10px red";
+            }
+        }, 300);
+
+        // 5. MUNCULIN MODAL PASSWORD SETELAH 6 DETIK
+        setTimeout(() => {
+            document.getElementById('pass-modal').style.display = 'flex';
+        }, 6000);
+    }
+
+    function handleEnter(e) {
+        if(e.key === 'Enter') checkPass();
+    }
+
+    function checkPass() {
+        const input = document.getElementById('pass-input').value;
+        if(input === '1234') {
+            // MATIIN SEMUA EFEK
+            clearInterval(audioInterval);
+            clearInterval(logInterval);
+            clearInterval(progressInterval);
+            if(oscillator) { oscillator.stop(); oscillator.disconnect(); }
+            if(document.exitFullscreen) { document.exitFullscreen(); }
+            
+            window.onpopstate = null; // Balikin fungsi back
+            document.getElementById('rat-screen').classList.remove('strobe');
+            
+            alert("AKSES DIBERIKAN. VIRUS BERHASIL DIBASMI.");
+            window.location.reload();
+        } else {
+            if(navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 1000]);
+            alert("KODE SALAH! FILE ANDA SEDANG DIHAPUS.");
+            document.getElementById('pass-input').value = "";
+        }
+    }
+</script>
+</body>
+</html>
